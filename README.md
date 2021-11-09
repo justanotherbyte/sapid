@@ -14,7 +14,7 @@ A high-level framework for building GitHub applications in Python.
 ### Basic bot example
 
 ```py
-from gitbot.bot import GitBot
+from gitbot import GitBot
 
 bot = GitBot(
     pem_file_fp="bot.pem",
