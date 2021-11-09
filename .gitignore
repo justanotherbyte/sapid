@@ -1,0 +1,8 @@
+Scripts/
+Lib/
+__pycache__/
+bot.pem
+debug.json
+pvikey.txt
+pyvenv.cfg
+tests.py
