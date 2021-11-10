@@ -64,7 +64,7 @@ class HTTPClient:
             if self.__session.closed is False:
                 await self.__session.close()
 
-    async def request_jwt(self, route: Route, **kwargs) -> Union[dict, str, bytes]:
+    async def request_with_jwt(self, route: Route, **kwargs) -> Union[dict, str, bytes]:
         method = route.method
         url = route.url
 
@@ -108,6 +108,6 @@ class HTTPClient:
 
     def fetch_app(self):
         route = Route("GET", "/app")
-        return self.request_jwt(route)
+        return self.request_with_jwt(route)
 
 

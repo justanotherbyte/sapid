@@ -4,7 +4,8 @@ from typing import (
     Optional,
     Dict,
     Awaitable,
-    List
+    List,
+    Union
 )
 
 import aiohttp
@@ -12,7 +13,7 @@ import aiohttp
 from .http import HTTPClient, AuthInfo
 from .server import WebhookServer
 from .state import ApplicationState
-from .user import ApplicationUser
+from .user import ApplicationUser, BaseUser, User
 
 
 class GitBot:
@@ -37,7 +38,10 @@ class GitBot:
         self.http = HTTPClient(auth, loop=self.loop, session=session)
 
         _endpoint = endpoint or "/gitbot-interaction-receive"
-        self.server = WebhookServer(webhook_secret=webhook_secret, endpoint=_endpoint)
+        self.server = WebhookServer(
+            webhook_secret=webhook_secret,
+            endpoint=_endpoint
+        )
 
         self._state = ApplicationState(self)
         self.__listeners: Dict[str, List[Awaitable]] = {}
@@ -55,10 +59,7 @@ class GitBot:
         _app_user = ApplicationUser(state=self._state, data=_app_info)
         self._state._user = _app_user
 
-        try:
-            await server._run(host=host, port=port, dispatch=self.dispatch)
-        finally:
-            await self.close()
+        await server._run(host=host, port=port, dispatch=self.dispatch)
 
     def run(
         self,
@@ -106,5 +107,10 @@ class GitBot:
     @property
     def user(self) -> ApplicationUser:
         return self._state._user
+
+    def get_user(self, id: int, /) -> Optional[Union[BaseUser, User]]:
+        user = self._state.get_user(id)
+        return user
+
 
         

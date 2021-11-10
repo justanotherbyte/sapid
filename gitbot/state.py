@@ -28,7 +28,6 @@ class ApplicationState:
     def get_user(self, id: int, /) -> Optional[Union[BaseUser, User]]:
         user = self._users.get(id)
         return user
-
     
 
 
