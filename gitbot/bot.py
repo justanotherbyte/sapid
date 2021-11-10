@@ -38,12 +38,14 @@ class GitBot:
         self.http = HTTPClient(auth, loop=self.loop, session=session)
 
         _endpoint = endpoint or "/gitbot-interaction-receive"
+        __state = ApplicationState(self)
         self.server = WebhookServer(
             webhook_secret=webhook_secret,
-            endpoint=_endpoint
+            endpoint=_endpoint,
+            state=__state
         )
 
-        self._state = ApplicationState(self)
+        self._state = __state
         self.__listeners: Dict[str, List[Awaitable]] = {}
 
     async def start(

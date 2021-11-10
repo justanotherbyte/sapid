@@ -16,6 +16,7 @@ from aiohttp import web
 
 if TYPE_CHECKING:
     from aiohttp.web import Request
+    from .state import ApplicationState
 
 
 async def json_or_text(request: Request) -> Union[Dict[str, Any], str]:
@@ -38,9 +39,11 @@ class WebhookServer:
     def __init__(
         self,
         webhook_secret: str,
+        state: ApplicationState,
         endpoint: str = "/gitbot-interaction-receive"
     ):
         self._app = web.Application()
+        self._state = state
         self._tcp: Optional[web.TCPSite] = None
         self._runner: Optional[web.AppRunner] = None
 
@@ -78,6 +81,14 @@ class WebhookServer:
         # TODO: Actually handle interactions.
         self._dispatch("raw_interaction_receive", data)
         event = headers["x-github-event"]
+        parser_name = "parse_" + event
+        try:
+            parser = self._state.parsers[parser_name]
+        except KeyError:
+            # A parser doesn't exist yet for this event.
+            pass
+        else:
+            return parser(data)
 
     async def _run(self, host: str, port: int, dispatch: Callable):
         endpoint = self.wh_endpoint
