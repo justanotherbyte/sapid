@@ -6,3 +6,6 @@ debug.json
 pvikey.txt
 pyvenv.cfg
 tests.py
+*.egg-info
+build/
+dist/
