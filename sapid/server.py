@@ -122,7 +122,7 @@ class WebhookServer:
         self._tcp = web.TCPSite(self._runner, host=host, port=str(port))
         await self._tcp.start()
         self._dispatch = dispatch
-        self._dispatch("gitbot_tcp_ready", host, port)
+        self._dispatch("sapid_tcp_ready", host, port)
 
     async def cleanup(self):
         if self._tcp:

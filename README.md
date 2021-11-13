@@ -1,4 +1,4 @@
-# GitBot
+# Sapid
 
 A high-level framework for building GitHub applications in Python.
 
@@ -14,7 +14,7 @@ A high-level framework for building GitHub applications in Python.
 ### Basic bot example
 
 ```py
-from gitbot import GitBot
+from sapid import GitBot
 
 bot = GitBot(
     pem_file_fp="bot.pem",
@@ -24,7 +24,7 @@ bot = GitBot(
 )
 
 @bot.event
-async def on_gitbot_tcp_ready(host, port):
+async def on_sapid_tcp_ready(host, port):
     print(f"tcp running on http://{host}:{port}")
     print(bot.user.name)
     print(bot.user.description)
