@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import hashlib
 import hmac
+import logging
 from typing import (
     Optional,
     Callable,
@@ -18,6 +19,8 @@ if TYPE_CHECKING:
     from aiohttp.web import Request
     from .state import ApplicationState
 
+
+_log = logging.getLogger(__name__)
 
 async def json_or_text(request: Request) -> Union[Dict[str, Any], str]:
     text = await request.text()
@@ -62,15 +65,19 @@ class WebhookServer:
         return "sha256=" + digest 
       
     async def receive_interaction(self, request: web.Request) -> web.Response:
+        _log.info("Interaction received.")
+
         headers = request.headers
+        host = request.host
         data = await json_or_text(request)
         request_content = await request.read() # if the json parse succeeds, this is also likely to succeed.
 
         # verify headers
         _hash = self._generate_hash(self.wh_secret, request_content)
-        signature = headers["x-hub-signature-256"]
-        if not hmac.compare_digest(signature, _hash):
+        signature = headers.get("x-hub-signature-256")
+        if signature is None or not hmac.compare_digest(signature, _hash):
             # the signatures did not match.
+            _log.critical("Received request with an invalid hash from %s. We have returned a 401 response." % host) # possible security risk.
             return web.Response(status=401)
             
         await self.handle_interaction(headers, data)

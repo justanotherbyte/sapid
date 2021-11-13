@@ -9,14 +9,17 @@ from typing import (
 )
 
 from .user import BaseUser
-from .utils import parse_to_dt
+from .issue import Issue
+from .enums import IssueLockReason
+from .installation import Installation
+from .utils import parse_to_dt, Cacheable, NUMSTR
 
 if TYPE_CHECKING:
     from .state import ApplicationState
     from .types.repository import Respository as RepositoryPayload
 
 
-class Repository:
+class Repository(Cacheable):
 
     if TYPE_CHECKING:
         id: int
@@ -64,6 +67,58 @@ class Repository:
     def __init__(self, *, state: ApplicationState, data: RepositoryPayload):
         self._state = state
         self._update(data)
+
+    def __repr__(self) -> str:
+        fmt = "<Repository id={0.id!r} name={0.name!r} owner={0.owner.login!r}>"
+        return fmt.format(self)
+
+    async def fetch_contributors(self) -> List[BaseUser]:
+        _cs = []
+        contributors_raw = await self._state._http.fetch_repository_contributors(self.owner.login, self.name)
+        for payload in contributors_raw:
+            _user = BaseUser(state=self._state, data=payload)
+            _cs.append(_user)
+
+        return _cs
+
+    async def fetch_installation(self, *, cache: bool = False) -> Installation:
+        if cache:
+            opt_installation = self.get_cache("__installation__")
+            if opt_installation:
+                return opt_installation
+        
+        data = await self._state._http.fetch_repo_installation(
+            owner=self.owner.login,
+            repo=self.name
+        )
+        installation = Installation(state=self._state, data=data)
+        self.set_cache("__installation__", installation) # this does not depend on the cache kwarg. We cache it regardless.
+        return installation
+
+    async def fetch_access_token(self, *, cache: bool = False) -> dict:
+        if cache:
+            opt_ac = self.get_cache("__access_token__")
+            if opt_ac:
+                return opt_ac
+        
+        installation = await self.fetch_installation(cache=True)
+        data = await self._state._http.fetch_access_token(installation.id)
+        self.set_cache("__access_token__", data)
+        return data
+
+    async def fetch_issue(self, issue_number: NUMSTR) -> Issue:
+        payload = await self._state._http.fetch_issue(
+            owner=self.owner.login,
+            repo=self.name,
+            issue_number=issue_number
+        )
+        issue = Issue(state=self._state, data=payload, repository=self)
+        return issue
+
+    @property
+    def installation(self) -> Optional[Installation]:
+        return self.get_cache("__installation__")
+    
 
     def _update(self, data: RepositoryPayload):
         self.id = data["id"]

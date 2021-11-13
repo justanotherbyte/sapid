@@ -8,7 +8,7 @@ from typing import (
     List
 )
 
-from .utils import TIMESTAMP_FORMAT
+from .utils import parse_to_dt
 
 if TYPE_CHECKING:
     from .types.user import User as UserPayload
@@ -122,13 +122,13 @@ class User(BaseUser):
     @property
     def created_at(self) -> datetime:
         _created_at = self._created_at
-        dt = datetime.strptime(_created_at, TIMESTAMP_FORMAT)
+        dt = parse_to_dt(_created_at)
         return dt
 
     @property
     def updated_at(self) -> datetime:
         _updated_at = self._updated_at
-        dt = datetime.strptime(_updated_at, TIMESTAMP_FORMAT)
+        dt = parse_to_dt(_updated_at)
         return dt
 
 

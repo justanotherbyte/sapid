@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import signal
 from typing import (
     Optional,
@@ -16,6 +17,8 @@ from .state import ApplicationState
 from .user import ApplicationUser, BaseUser, User
 
 
+_log = logging.getLogger(__name__)
+
 class GitBot:
     def __init__(
         self,
@@ -23,6 +26,7 @@ class GitBot:
         app_id: str,
         webhook_secret: str,
         client_secret: str,
+        client_id: str,
         *,
         loop: Optional[asyncio.AbstractEventLoop] = None,
         session: Optional[aiohttp.ClientSession] = None,
@@ -31,7 +35,8 @@ class GitBot:
         auth = AuthInfo(
             pem_fp=pem_file_fp,
             app_id=app_id,
-            client_secret=client_secret
+            client_secret=client_secret,
+            client_id=client_id
         )
         
         self.loop = loop if loop is not None else asyncio.get_event_loop()
@@ -59,9 +64,13 @@ class GitBot:
         self.http.recreate()  # Initial session creation
         _app_info = await self.http.fetch_app()
         _app_user = ApplicationUser(state=self._state, data=_app_info)
+        _log.info(f"Identified Application: owner: {_app_user.owner.login}: name: {_app_user.name}: app_id: {_app_user.id}")
         self._state._user = _app_user
 
+        await self._state._call_initial_endpoints()
+
         await server._run(host=host, port=port, dispatch=self.dispatch)
+        _log.info(f"TCP server is now online at: http://{host}:{port}")
 
     def run(
         self,
