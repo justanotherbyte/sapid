@@ -13,6 +13,10 @@ if TYPE_CHECKING:
     from .types.issue import Issue as IssuePayload
 
 
+__all__ = (
+    "Comment",
+)
+
 class Comment(Cacheable):
     
     if TYPE_CHECKING:

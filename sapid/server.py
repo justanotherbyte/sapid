@@ -26,6 +26,10 @@ try:
 except ImportError:
     REMOTES_EXIST = False
 
+__all__ = (
+    "WebhookServer",
+)
+
 _log = logging.getLogger(__name__)
 
 async def json_or_text(request: Request) -> Union[Dict[str, Any], str]:

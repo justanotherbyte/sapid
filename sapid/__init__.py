@@ -1,8 +1,8 @@
-from .bot import GitBot
-from .server import WebhookServer
-from .user import User, BaseUser
-from .repository import Repository
-from .enums import IssueLockReason
+from .bot import *
+from .server import *
+from .user import *
+from .repository import *
+from .enums import *
 
 
 __version__ = "1.0.0a"

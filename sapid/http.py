@@ -2,6 +2,7 @@ import asyncio
 import logging
 import json
 import time
+import sys
 from typing import (
     Optional,
     Dict,
@@ -14,6 +15,7 @@ import aiohttp
 from .utils import generate_jwt
 from .enums import IssueLockReason
 from .errors import HTTPException
+from . import __version__
 
 
 _log = logging.getLogger(__name__)
@@ -59,6 +61,10 @@ class HTTPClient:
 
         self.__auth = auth_info
         self.__session = session
+
+        user_agent = 'DiscordBot (https://github.com/Rapptz/discord.py {0}) Python/{1[0]}.{1[1]} aiohttp/{2}'
+        self.user_agent = user_agent.format(__version__, sys.version_info, aiohttp.__version__)
+        print(self.user_agent)
 
     def recreate(self):
         if self.__session is None or self.__session.closed is True:

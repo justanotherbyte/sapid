@@ -20,6 +20,10 @@ if TYPE_CHECKING:
     from .utils import PAYLOADITEMTYPE
 
 
+__all__ = (
+    "ApplicationState",
+)
+
 class ApplicationState:
     def __init__(self, bot: GitBot):
         self._bot = bot

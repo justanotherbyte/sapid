@@ -19,6 +19,10 @@ if TYPE_CHECKING:
     from .types.issue import Issue as IssuePayload
 
 
+__all__ = (
+    "Issue",
+)
+
 class Issue(Cacheable):
 
     if TYPE_CHECKING:

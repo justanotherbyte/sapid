@@ -19,6 +19,10 @@ if TYPE_CHECKING:
     from .types.repository import Respository as RepositoryPayload
 
 
+__all__ = (
+    "Repository",
+)
+
 class Repository(Cacheable):
 
     if TYPE_CHECKING:

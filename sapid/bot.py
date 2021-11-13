@@ -17,6 +17,10 @@ from .state import ApplicationState
 from .user import ApplicationUser, BaseUser, User
 
 
+__all__ = (
+    "GitBot",
+)
+
 _log = logging.getLogger(__name__)
 
 class GitBot:

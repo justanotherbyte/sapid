@@ -16,6 +16,10 @@ if TYPE_CHECKING:
     from .types.installation import Installation as InstallationPayload
 
 
+__all__ = (
+    "Installation",
+)
+
 class Installation(Cacheable):
 
     if TYPE_CHECKING:
