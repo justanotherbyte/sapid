@@ -20,6 +20,12 @@ if TYPE_CHECKING:
     from .state import ApplicationState
 
 
+REMOTES_EXIST = True
+try:
+    import aiohttp_remotes
+except ImportError:
+    REMOTES_EXIST = False
+
 _log = logging.getLogger(__name__)
 
 async def json_or_text(request: Request) -> Union[Dict[str, Any], str]:
@@ -43,6 +49,7 @@ class WebhookServer:
         self,
         webhook_secret: str,
         state: ApplicationState,
+        behind_proxy: bool,
         endpoint: str = "/gitbot-interaction-receive"
     ):
         self._app = web.Application()
@@ -52,6 +59,7 @@ class WebhookServer:
 
         self.wh_secret = webhook_secret
         self.wh_endpoint = endpoint
+        self._behind_proxy = behind_proxy
 
         self._dispatch: Optional[Callable] = None
 
@@ -98,6 +106,13 @@ class WebhookServer:
             return parser(data)
 
     async def _run(self, host: str, port: int, dispatch: Callable):
+        if not REMOTES_EXIST:
+            _log.debug("aiohttp_remotes is not installed. Proxy support will not be provided.")
+
+        if self._behind_proxy:
+            relaxed = aiohttp_remotes.XForwardedRelaxed()
+            await aiohttp_remotes.setup(self._app, relaxed)
+        
         endpoint = self.wh_endpoint
         self._app.router.add_post(endpoint, self.receive_interaction)
 

@@ -30,7 +30,8 @@ class GitBot:
         *,
         loop: Optional[asyncio.AbstractEventLoop] = None,
         session: Optional[aiohttp.ClientSession] = None,
-        endpoint: Optional[str] = None
+        endpoint: Optional[str] = None,
+        apply_proxy_support: bool = False
     ):
         auth = AuthInfo(
             pem_fp=pem_file_fp,
@@ -47,7 +48,8 @@ class GitBot:
         self.server = WebhookServer(
             webhook_secret=webhook_secret,
             endpoint=_endpoint,
-            state=__state
+            state=__state,
+            behind_proxy=apply_proxy_support
         )
 
         self._state = __state
