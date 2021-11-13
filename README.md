@@ -31,3 +31,22 @@ async def on_sapid_tcp_ready(host, port):
 
 bot.run(host="127.0.0.1", port=3000)
 ```
+
+### Locking Issue on Star
+I know this isn't something you'd usually do, but hey, it showcases something.
+```py
+from sapid import GitBot, Repository, IssueLockReason
+
+bot = GitBot(
+    pem_file_fp="bot.pem",
+    app_id="...", # Found on github.
+    webhook_secret="...", # Set on github.
+    client_secret="..." # Generate on github.
+)
+
+@bot.event
+async def on_repository_star_update(action: str, repo: Repository):
+    issue = await repo.fetch_issue(1)
+    await issue.create_comment("Hello! Locking Issue")
+    await issue.lock(reason=IssueLockReason.TOO_HEATED)
+```
