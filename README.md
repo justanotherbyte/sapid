@@ -9,6 +9,21 @@ A high-level framework for building GitHub applications in Python.
 - Handles interactions for you (responding with appropriate response status codes etc.)
 - Minimal raw payloads. Most are being parsed internally into pythonic objects.
 - Runs its own webhook server, with a no-bloat async web server (aiohttp)
+- Inbuilt support of proxy support with `aiohttp_remotes`.
+
+## Installation
+### Stable
+```sh
+pip install sapid
+```
+### Git
+```sh
+pip install git+https://github.com/justanotherbyte/sapid
+```
+### Proxy Support
+```sh
+pip install sapid[proxy-support]
+```
 
 ## Example
 ### Basic bot example
