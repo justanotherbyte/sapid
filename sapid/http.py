@@ -15,7 +15,6 @@ import aiohttp
 from .utils import generate_jwt
 from .enums import IssueLockReason
 from .errors import HTTPException
-from . import __version__
 
 
 _log = logging.getLogger(__name__)
@@ -57,12 +56,13 @@ class HTTPClient:
         loop: Optional[asyncio.AbstractEventLoop] = None,
         session: Optional[aiohttp.ClientSession] = None
     ):
+        from . import __version__
         self.loop = loop or asyncio.get_event_loop()
 
         self.__auth = auth_info
         self.__session = session
 
-        user_agent = 'DiscordBot (https://github.com/Rapptz/discord.py {0}) Python/{1[0]}.{1[1]} aiohttp/{2}'
+        user_agent = 'GithubApplication (https://github.com/justanotherbyte/sapid {0}) Python/{1[0]}.{1[1]} aiohttp/{2}' # taken from discord.py. Their header format is nice.
         self.user_agent = user_agent.format(__version__, sys.version_info, aiohttp.__version__)
         print(self.user_agent)
 
