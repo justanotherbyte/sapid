@@ -64,7 +64,6 @@ class HTTPClient:
 
         user_agent = 'GithubApplication (https://github.com/justanotherbyte/sapid {0}) Python/{1[0]}.{1[1]} aiohttp/{2}' # taken from discord.py. Their header format is nice.
         self.user_agent = user_agent.format(__version__, sys.version_info, aiohttp.__version__)
-        print(self.user_agent)
 
     def recreate(self):
         if self.__session is None or self.__session.closed is True:
@@ -105,10 +104,12 @@ class HTTPClient:
 
         if "headers" not in kwargs:
             kwargs["headers"] = {
-                "Authorization": "Bearer {}".format(jwt)
+                "Authorization": "Bearer {}".format(jwt),
+                "User-Agent": self.user_agent
             }
         else:
             kwargs["headers"]["Authorization"] = "Bearer {}".format(jwt)
+            kwargs["headers"]["User-Agent"] = self.user_agent
 
         _log.debug("Making a %s request with JWT to %s" % (method, url))
 
@@ -131,7 +132,8 @@ class HTTPClient:
             raise ValueError("_custom_auth and _apply_secret_auth cannot both be used.")
         
         headers = {
-            "accept": "application/vnd.github.v3+json"
+            "accept": "application/vnd.github.v3+json",
+            "User-Agent": self.user_agent
         }
         if _custom_auth:
             headers["Authorization"] = _custom_auth
