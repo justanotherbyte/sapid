@@ -139,9 +139,8 @@ class HTTPClient:
         if _custom_auth:
             headers["Authorization"] = _custom_auth
         if _apply_secret_auth is True:
-            headers["Authorization"] = "token " + self.__auth.client_secret
+            headers["Authorization"] = "Bearer " + self.__auth.client_secret
         kwargs["headers"] = headers
-        print(kwargs)
         
         _log.debug("Making a %s request to %s" % (method, url))
         async with self.__session.request(method, url, **kwargs) as resp:
