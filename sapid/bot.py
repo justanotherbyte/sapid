@@ -1,12 +1,17 @@
 import asyncio
 import logging
 import signal
+import traceback
+import sys
 from typing import (
+    Any,
     Optional,
     Dict,
     Awaitable,
     List,
-    Union
+    Union,
+    Coroutine,
+    Callable
 )
 
 import aiohttp
@@ -57,6 +62,8 @@ class GitBot:
         )
 
         self._state = __state
+        self._closed = False
+        self._done_ev = asyncio.Event()
         self.__listeners: Dict[str, List[Awaitable]] = {}
 
     async def start(
@@ -91,21 +98,65 @@ class GitBot:
             loop.add_signal_handler(signal.SIGTERM, lambda: loop.stop())
         except NotImplementedError:
             pass
-        
+
+        async def runner():
+            try:
+                await self._done_ev.wait()
+            except KeyboardInterrupt:
+                if not self.is_closed():
+                    await self.close()
+
+        def stop_on_completion(_):
+            loop.stop()        
+
+        future = asyncio.ensure_future(runner(), loop=loop)
+        future.add_done_callback(stop_on_completion)
+
         loop.run_until_complete(self.start(host=host, port=port))
         loop.run_forever()
 
     async def close(self):
+        self._done_ev.set()
         await self.server.cleanup()
         await self.http.close()
-        
+        self._closed = True
 
-    def dispatch(self, event_name: str, *args):
-        event_name = "on_" + event_name
-        listeners = self.__listeners.get(event_name, [])
+    def is_closed(self) -> bool:
+        return self._closed
+
+    async def _run_event(
+        self,
+        coro: Callable[..., Coroutine[Any, Any, Any]],
+        event: str,
+        *args: Any,
+        **kwargs: Any
+    ):
+        try:
+            await coro(*args, **kwargs)
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            await self.on_internal_error(event, *args, **kwargs)
+
+    def _schedule_event(
+        self,
+        coro: Callable[..., Coroutine[Any, Any, Any]],
+        event: str,
+        idx: int,
+        *args: Any,
+        **kwargs: Any
+    ):
+        wrapped = self._run_event(coro, event, *args, **kwargs)
+        asyncio.create_task(wrapped, name=f"sapid: {event}: {idx}")
+        
+    def dispatch(self, event_name: str, *args, **kwargs):
+        _log.debug("Dispatching event %s" % event_name)
+
+        listener_name = "on_" + event_name
+        listeners = self.__listeners.get(listener_name, [])
 
         for i, callback in enumerate(listeners):
-            self.loop.create_task(callback(*args), name=f"gitbot:{event_name}:{i}")
+            self._schedule_event(callback, event_name, i, *args, **kwargs)
 
     def add_listener(self, event_name: str, callback: Awaitable):
         if not asyncio.iscoroutinefunction(callback):
@@ -117,6 +168,11 @@ class GitBot:
         current_listeners.append(callback)
 
         self.__listeners[event_name] = current_listeners
+
+    async def on_internal_error(self, event: str, *args: Any, **kwargs: Any) -> None:
+        print(f'Ignoring exception in {event}', file=sys.stderr)
+        traceback.print_exc()
+
 
     def event(self, coro: Awaitable):
         self.add_listener(coro.__name__, coro)

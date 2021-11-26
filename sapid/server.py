@@ -98,8 +98,11 @@ class WebhookServer:
 
     async def handle_interaction(self, headers: dict, data: dict):
         # TODO: Actually handle interactions.
+
         self._dispatch("raw_interaction_receive", data)
         event = headers["x-github-event"]
+        self._dispatch("event_receive", event, data)
+        
         parser_name = "parse_" + event
         try:
             parser = self._state.parsers[parser_name]
@@ -114,6 +117,13 @@ class WebhookServer:
             _log.debug("aiohttp_remotes is not installed. Proxy support will not be provided.")
 
         if self._behind_proxy:
+            if not REMOTES_EXIST:
+                err = (
+                    "aiohttp-remotes is not installed. You have "
+                    "opted-in for proxy support. Please either turn this setting "
+                    "off, or install aiohttp-remotes."
+                )
+                raise ValueError(err)
             relaxed = aiohttp_remotes.XForwardedRelaxed()
             await aiohttp_remotes.setup(self._app, relaxed)
         

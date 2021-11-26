@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 
 from typing import (
     TYPE_CHECKING,
@@ -57,6 +58,10 @@ class Issue(Cacheable):
         self._state = state
         self._update(data, repository)
 
+    def __repr__(self) -> str:
+        fmt = "<Issue id={0.id!r} number={0.number!r} locked={0.locked!r} title={0.title!r} repository={0.repository!r}>"
+        return fmt.format(self)
+
     async def lock(self, *, reason: Optional[IssueLockReason] = None):
         access_token = await self.repository.fetch_access_token(cache=True)
         await self._state._http.lock_issue(
@@ -65,6 +70,15 @@ class Issue(Cacheable):
             issue_number=self.number,
             access_token=access_token["token"],
             reason=reason
+        )
+    
+    async def unlock(self):
+        access_token = await self.repository.fetch_access_token(cache=True)
+        await self._state._http.unlock_issue(
+            owner=self.repository.owner.login,
+            repo=self.repository.name,
+            issue_number=self.number,
+            access_token=access_token["token"]
         )
 
     async def create_comment(self, body: str) -> Comment:
@@ -78,6 +92,16 @@ class Issue(Cacheable):
         )
         comment = Comment(state=self._state, data=data, issue=self)
         return comment
+
+    async def fetch_comment(self, comment_id: int, /) -> Comment:
+        data = await self._state._http.fetch_issue_comment(
+            owner=self.repository.owner.login,
+            repo=self.repository.name,
+            comment_id=comment_id
+        )
+        comment = Comment(state=self._state, data=data, issue=self)
+        return comment
+
     
     def _update(self, data: IssuePayload, repository: Repository):
         self.url = data["url"]        

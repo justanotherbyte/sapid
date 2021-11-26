@@ -46,6 +46,10 @@ class BaseUser:
         self._state = state
         self._update(data)
 
+    def __repr__(self) -> str:
+        fmt = "<BaseUser login={0.login!r} id={0.id!r} site_admin={0.site_admin!r}>"
+        return fmt.format(self)
+
     def _update(self, data: UserPayload):
         self.login = data["login"]
         self.id = data["id"]
@@ -93,6 +97,10 @@ class User(BaseUser):
 
     def __init__(self, *, state: ApplicationState, data: UserPayload):
         super().__init__(state=state, data=data)
+
+    def __repr__(self) -> str:
+        fmt = "<User login={0.login!r} id={0.id!r} site_admin={0.site_admin!r} hireable={0.hireable!r} email={0.email!r}>"
+        return fmt.format(self)
 
     def _update(self, data: UserPayload):
         super()._update(data)
@@ -171,12 +179,12 @@ class ApplicationUser:
     @property
     def created_at(self) -> datetime:
         _created_at = self._created_at
-        dt = datetime.strptime(_created_at, TIMESTAMP_FORMAT)
+        dt = parse_to_dt(_created_at)
         return dt
 
     @property
     def updated_at(self) -> datetime:
         _updated_at = self._updated_at
-        dt = datetime.strptime(_updated_at, TIMESTAMP_FORMAT)
+        dt = parse_to_dt(_updated_at)
         return dt
     

@@ -26,6 +26,7 @@ class Comment(Cacheable):
         html_url: str
         body: str
         user: BaseUser
+        author: BaseUser
         created_at: str
         updated_at: str
         issue_url: str
@@ -34,6 +35,10 @@ class Comment(Cacheable):
     def __init__(self, *, state: ApplicationState, data: IssuePayload, issue: Issue):
         self._state = state
         self._update(data, issue)
+
+    def __repr__(self) -> str:
+        fmt = "<Comment id={0.id!r} author={0.author!r}>"
+        return fmt.format(self)
     
     def _update(self, data: IssuePayload, issue: IssuePayload):
         self.id = data["id"]
@@ -42,6 +47,7 @@ class Comment(Cacheable):
         self.html_url = data["html_url"]
         self.body = data["body"]
         self.user = BaseUser(state=self._state, data=data["user"])
+        self.author = self.user # a more understandable attribute.
         self.created_at = parse_to_dt(data["created_at"])
         self.updated_at = parse_to_dt(data["updated_at"])
         self.issue_url = data["issue_url"]

@@ -7,7 +7,8 @@ from typing import (
     Optional,
     Dict,
     Union,
-    Any
+    Any,
+    List
 )
 
 import aiohttp
@@ -118,7 +119,7 @@ class HTTPClient:
             if resp.ok:
                 return data
             
-            raise RuntimeError(str(data))
+            raise HTTPException(data, resp)
 
     async def request(self, route: Route, **kwargs) -> dict:
         method = route.method
@@ -138,8 +139,9 @@ class HTTPClient:
         if _custom_auth:
             headers["Authorization"] = _custom_auth
         if _apply_secret_auth is True:
-            headers["Authorization"] = "Bearer " + self.__auth.client_id
+            headers["Authorization"] = "token " + self.__auth.client_secret
         kwargs["headers"] = headers
+        print(kwargs)
         
         _log.debug("Making a %s request to %s" % (method, url))
         async with self.__session.request(method, url, **kwargs) as resp:
@@ -147,7 +149,7 @@ class HTTPClient:
             if resp.ok:
                 return data
             
-            raise RuntimeError(str(data))
+            raise HTTPException(data, resp)
 
     def fetch_app(self):
         route = Route("GET", "/app")
@@ -190,6 +192,9 @@ class HTTPClient:
         return self.request_with_jwt(route)
 
     # issues
+    def fetch_all_issues(self):
+        route = Route("GET", "/issues")
+        return self.request(route, _apply_secret_auth=True)
 
     def fetch_issue(self, owner: str, repo: str, issue_number: int):
         issue_number = str(issue_number)
@@ -233,6 +238,65 @@ class HTTPClient:
 
         return self.request(route, headers=headers)
 
+    def unlock_issue(
+        self,
+        owner: str,
+        repo: str,
+        issue_number: int,
+        access_token: str
+    ):
+        issue_number = str(issue_number)
+
+        route = Route(
+            "DELETE",
+            "/repos/{owner}/{repo}/issues/{issue_number}/lock",
+            owner=owner, repo=repo,
+            issue_number=issue_number
+        )
+        headers = {
+            "Authorization": "token " + access_token
+        }
+        return self.request(route, headers=headers)
+
+    def create_issue(
+        self,
+        owner: str,
+        repo: str,
+        access_token: str,
+        *,
+        title: str,
+        body: str,
+        assignee: Optional[str] = None,
+        milestone: Optional[int] = None,
+        labels: List[str] = [],
+        assignees: List[str] = []
+    ):
+        route = Route(
+            "POST",
+            "/repos/{owner}/{repo}/issues",
+            owner=owner, repo=repo
+        )
+
+        if assignee and assignees:
+            raise ValueError("You cannot pass both `assignee` and `assignees`. Only one may be provided.")
+
+        payload = {
+            "title": title,
+            "body": body,
+            "milestone": milestone,
+            "labels": labels,
+        }
+
+        if assignees:
+            payload["assignees"] = assignees
+        elif assignee:
+            payload["assignee"] = assignee
+
+        headers = {
+            "Authorization": "token " + access_token
+        }
+        return self.request(route, json=payload, headers=headers)
+
     def create_issue_comment(
         self,
         owner: str,
@@ -254,3 +318,18 @@ class HTTPClient:
             "Authorization": "token " + access_token
         }
         return self.request(route, json=payload, headers=headers)
+
+    def fetch_issue_comment(
+        self,
+        owner: str,
+        repo: str,
+        comment_id: int
+    ):
+        comment_id = str(comment_id)
+        route = Route(
+            "GET",
+            "/repos/{owner}/{repo}/issues/comments/{comment_id}",
+            owner=owner, repo=repo,
+            comment_id=comment_id
+        )
+        return self.request(route)

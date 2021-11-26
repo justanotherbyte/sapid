@@ -118,6 +118,31 @@ class Repository(Cacheable):
         )
         issue = Issue(state=self._state, data=payload, repository=self)
         return issue
+    
+    async def create_issue(
+        self,
+        *,
+        title: str,
+        body: str,
+        assignee: Optional[str] = None,
+        milestone: Optional[int] = None,
+        labels: List[str] = [],
+        assignees: List[str] = []
+    ) -> Issue:
+        access_token = await self.fetch_access_token(cache=True)
+        data = await self._state._http.create_issue(
+            owner=self.owner.login,
+            repo=self.name,
+            access_token=access_token["token"],
+            title=title,
+            body=body,
+            assignee=assignee,
+            milestone=milestone,
+            labels=labels,
+            assignees=assignees
+        )
+        issue = Issue(state=self._state, data=data, repository=self)
+        return issue
 
     @property
     def installation(self) -> Optional[Installation]:
