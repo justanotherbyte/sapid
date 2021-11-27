@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import signal
 import traceback
 import sys
+import time
 from typing import (
     Any,
     Optional,
@@ -11,7 +14,8 @@ from typing import (
     List,
     Union,
     Coroutine,
-    Callable
+    Callable,
+    TYPE_CHECKING
 )
 
 import aiohttp
@@ -19,7 +23,16 @@ import aiohttp
 from .http import HTTPClient, AuthInfo
 from .server import WebhookServer
 from .state import ApplicationState
-from .user import ApplicationUser, BaseUser, User
+from .user import (
+    ApplicationUser,
+    BaseUser,
+    User
+)
+
+if TYPE_CHECKING:
+    from .issue import Issue
+    from .user import User, BaseUser
+    from .installation import Installation
 
 
 __all__ = (
@@ -107,7 +120,8 @@ class GitBot:
                     await self.close()
 
         def stop_on_completion(_):
-            loop.stop()        
+            loop.stop()
+            time.sleep(1) # allow for cleanup operations to occur.
 
         future = asyncio.ensure_future(runner(), loop=loop)
         future.add_done_callback(stop_on_completion)
@@ -136,7 +150,10 @@ class GitBot:
         except asyncio.CancelledError:
             pass
         except Exception:
-            await self.on_internal_error(event, *args, **kwargs)
+            try:
+                await self.on_internal_error(event, *args, **kwargs)
+            except asyncio.CancelledError:
+                pass
 
     def _schedule_event(
         self,
@@ -173,6 +190,14 @@ class GitBot:
         print(f'Ignoring exception in {event}', file=sys.stderr)
         traceback.print_exc()
 
+    def attach_new_error_callback(
+        self,
+        coro: Callable[..., Coroutine[Any, Any, Any]]
+    ):
+        if not asyncio.iscoroutinefunction(coro):
+            raise ValueError("Error callback must be a coroutine.")
+        
+        self.on_internal_error = coro
 
     def event(self, coro: Awaitable):
         self.add_listener(coro.__name__, coro)
@@ -181,9 +206,26 @@ class GitBot:
     def user(self) -> ApplicationUser:
         return self._state._user
 
+    @property
+    def cached_issues(self) -> List[Issue]:
+        return list(self._state._issues.values())
+    
+    @property
+    def cached_users(self) -> List[Union[BaseUser, User]]:
+        return list(self._state._users.values())
+    
+    @property
+    def cached_installations(self) -> List[Installation]:
+        return list(self._state._installations.values())
+    
     def get_user(self, id: int, /) -> Optional[Union[BaseUser, User]]:
         user = self._state.get_user(id)
         return user
 
-
-        
+    def get_issue(self, id: int, /) -> Optional[Issue]:
+        issue = self._state.get_issue(id)
+        return issue
+    
+    def get_installation(self, id: int, /) -> Optional[Installation]:
+        installation = self._state.get_installation(id)
+        return installation

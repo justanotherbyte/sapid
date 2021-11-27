@@ -77,6 +77,10 @@ class ApplicationState:
     def get_installation(self, id: int, /) -> Optional[Installation]:
         installation = self._installations.get(id)
         return installation
+
+    def get_issue(self, id: int, /) -> Optional[Issue]:
+        issue = self._installations.get(id)
+        return issue
     
     def parse_star(self, data):
         repository = data["repository"]
